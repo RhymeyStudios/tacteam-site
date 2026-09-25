@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>TacTeam Studios</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;700&family=IBM+Plex+Sans:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+  /* Deliberately single-theme: a tactical HUD look that stays dark everywhere */
+  :root {
+    color-scheme: dark;
+    --ground: #0F141B;
+    --panel: #161E28;
+    --line: #26323F;
+    --steel: #93A7BC;
+    --text: #E4E9EF;
+    --amber: #F2A93B;
+    --amber-dim: rgba(242, 169, 59, 0.18);
+    --ok: #6FCF97;
+    --display: "Chakra Petch", "Arial Narrow", system-ui, sans-serif;
+    --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--ground);
+    color: var(--text);
+    font: 400 16px/1.6 var(--body);
+    padding-inline: 20px;
+    overflow-x: hidden;
+  }
+  /* Ambient grid that drifts slowly */
+  body::before {
+    content: "";
+    position: fixed; inset: -60px;
+    background-image:
+      linear-gradient(var(--line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size: 60px 60px;
+    opacity: .35;
+    animation: drift 30s linear infinite;
+    pointer-events: none; z-index: -1;
+  }
+  @keyframes drift { to { transform: translate(60px, 60px); } }
+
+  .wrap { max-width: 1080px; margin: 0 auto; }
+  .tag {
+    font: 500 11px/1 var(--mono);
+    letter-spacing: .08em;
+    color: var(--steel);
+    text-transform: uppercase;
+  }
+  .tag b { color: var(--amber); font-weight: 500; }
+
+  /* ---------- Top bar ---------- */
+  header {
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    padding-block: 22px;
+    border-bottom: 1px solid var(--line);
+    animation: fadeDown .6s ease-out both;
+  }
+  .logo { display: flex; align-items: center; gap: 10px; font: 700 18px/1 var(--display); letter-spacing: .06em; }
+  .logo-mark {
+    width: 26px; height: 26px; border: 2px solid var(--amber);
+    transform: rotate(45deg);
+    display: grid; place-items: center;
+  }
+  .logo-mark::after { content: ""; width: 8px; height: 8px; background: var(--amber); animation: blink 2s steps(2) infinite; }
+  nav { display: flex; gap: 20px; }
+  nav a { color: var(--steel); text-decoration: none; font: 500 13px/1 var(--mono); position: relative; padding-block: 4px; }
+  nav a::after {
+    content: ""; position: absolute; left: 0; bottom: 0; height: 1px; width: 100%;
+    background: var(--amber); transform: scaleX(0); transform-origin: left;
+    transition: transform .3s ease;
+  }
+  nav a:hover, nav a:focus-visible { color: var(--text); outline: none; }
+  nav a:hover::after, nav a:focus-visible::after { transform: scaleX(1); }
+  @keyframes fadeDown { from { opacity: 0; transform: translateY(-12px); } }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* ---------- Hero ---------- */
+  .hero {
+    display: grid; grid-template-columns: 1.3fr 1fr; gap: 48px; align-items: center;
+    padding-block: 72px 56px;
+  }
+  .hero h1 {
+    font: 700 clamp(40px, 7vw, 76px)/1.02 var(--display);
+    letter-spacing: -.01em; margin: 14px 0 20px;
+    text-wrap: balance;
+  }
+  .hero h1 span { display: inline-block; animation: rise .7s cubic-bezier(.2,.8,.2,1) both; }
+  .hero h1 span:nth-child(2) { animation-delay: .12s; }
+  .hero h1 span:nth-child(3) { animation-delay: .24s; color: var(--amber); }
+  @keyframes rise { from { opacity: 0; transform: translateY(40px); } }
+  .hero p { color: var(--steel); max-width: 46ch; margin: 0 0 28px; animation: rise .7s .4s both; }
+  .status { font: 400 13px/1 var(--mono); color: var(--ok); display: flex; align-items: center; gap: 8px; animation: rise .6s both; }
+  .status::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--ok); animation: ping 1.8s ease-out infinite; }
+  @keyframes ping { 0% { box-shadow: 0 0 0 0 rgba(111,207,151,.6); } 100% { box-shadow: 0 0 0 10px rgba(111,207,151,0); } }
+  .cursor { display: inline-block; width: 8px; height: 14px; background: var(--ok); animation: blink 1s steps(2) infinite; }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 10px;
+    font: 700 14px/1 var(--display); letter-spacing: .1em; text-transform: uppercase;
+    color: var(--ground); background: var(--amber);
+    padding: 16px 24px; text-decoration: none;
+    clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+    animation: rise .7s .55s both;
+    transition: transform .2s ease;
+  }
+  .btn .arrow { transition: transform .25s ease; }
+  .btn:hover .arrow, .btn:focus-visible .arrow { transform: translateX(5px); }
+  .btn:hover { transform: translateY(-2px); }
+  .btn:focus-visible { outline: 2px solid var(--text); outline-offset: 3px; }
+
+  /* Radar */
+  .radar-box { display: grid; gap: 10px; justify-items: center; animation: fadeIn 1s .3s both; }
+  @keyframes fadeIn { from { opacity: 0; } }
+  .radar {
+    position: relative; width: min(340px, 100%); aspect-ratio: 1; max-width: 100%;
+    border-radius: 50%;
+    border: 1px solid var(--line);
+    background:
+      radial-gradient(circle, transparent 32%, var(--line) 32.3%, transparent 32.8%),
+      radial-gradient(circle, transparent 65%, var(--line) 65.3%, transparent 65.8%),
+      linear-gradient(var(--line), var(--line)) center / 1px 100% no-repeat,
+      linear-gradient(var(--line), var(--line)) center / 100% 1px no-repeat,
+      var(--panel);
+    overflow: hidden;
+  }
+  .sweep {
+    position: absolute; inset: 0; border-radius: 50%;
+    background: conic-gradient(from 0deg, var(--amber-dim), transparent 70deg);
+    animation: spin 4s linear infinite;
+  }
+  .sweep::after {
+    content: ""; position: absolute; left: 50%; top: 0; width: 2px; height: 50%;
+    background: var(--amber); transform: translateX(-50%);
+    box-shadow: 0 0 12px var(--amber);
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .blip {
+    position: absolute; width: 9px; height: 9px; border-radius: 50%;
+    background: var(--amber);
+    animation: blipFade 4s linear infinite;
+  }
+  .blip::after {
+    content: ""; position: absolute; inset: -6px; border: 1px solid var(--amber); border-radius: 50%;
+    animation: ring 4s ease-out infinite; animation-delay: inherit;
+  }
+  /* Each blip is timed to light up as the sweep passes its angle */
+  .blip.b1 { top: 22%; left: 62%; animation-delay: .35s; }
+  .blip.b2 { top: 64%; left: 74%; animation-delay: 1.35s; }
+  .blip.b3 { top: 70%; left: 30%; animation-delay: 2.5s; }
+  @keyframes blipFade { 0% { opacity: 1; } 60%, 100% { opacity: .15; } }
+  @keyframes ring { 0% { transform: scale(.6); opacity: 1; } 40%, 100% { transform: scale(2.4); opacity: 0; } }
+
+  /* ---------- Ticker ---------- */
+  .ticker {
+    border-block: 1px solid var(--line);
+    overflow: hidden; white-space: nowrap;
+    padding-block: 14px;
+    mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  }
+  .ticker-track { display: inline-flex; gap: 48px; animation: scroll 28s linear infinite; }
+  .ticker-track span { font: 500 13px/1 var(--mono); color: var(--steel); }
+  .ticker-track span b { color: var(--amber); font-weight: 500; }
+  @keyframes scroll { to { transform: translateX(-50%); } }
+
+  /* ---------- Sections ---------- */
+  section { padding-block: 64px; }
+  .sec-head { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; flex-wrap: wrap; margin-bottom: 28px; }
+  h2 { font: 700 clamp(26px, 4vw, 36px)/1.1 var(--display); margin: 6px 0 0; letter-spacing: .01em; }
+
+  .projects { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+  .card {
+    position: relative; background: var(--panel); padding: 28px;
+    border: 1px solid var(--line);
+    transition: transform .3s ease, border-color .3s ease;
+  }
+  /* Corner brackets that close in on hover */
+  .card::before, .card::after {
+    content: ""; position: absolute; width: 18px; height: 18px;
+    border-color: var(--amber); border-style: solid;
+    transition: all .3s ease;
+  }
+  .card::before { top: -1px; left: -1px; border-width: 2px 0 0 2px; }
+  .card::after { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; }
+  .card:hover { transform: translateY(-4px); border-color: #34455A; }
+  .card:hover::before, .card:hover::after { width: 40px; height: 40px; }
+  .card h3 { font: 700 24px/1.2 var(--display); margin: 10px 0 8px; }
+  .card p { color: var(--steel); margin: 0 0 22px; }
+  .meter { display: grid; gap: 8px; }
+  .meter-row { display: flex; justify-content: space-between; font: 400 12px/1 var(--mono); color: var(--steel); font-variant-numeric: tabular-nums; }
+  .bar { height: 6px; background: var(--line); overflow: hidden; }
+  .bar i {
+    display: block; height: 100%; width: var(--w);
+    background: repeating-linear-gradient(-45deg, var(--amber) 0 8px, #D18E28 8px 16px);
+    background-size: 22.6px 100%;
+    animation: fill 1.6s .8s cubic-bezier(.2,.8,.2,1) both, stripes 1s linear infinite;
+  }
+  @keyframes fill { from { width: 0; } }
+  @keyframes stripes { to { background-position: 22.6px 0; } }
+
+  .values { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .value { border-top: 2px solid var(--line); padding-top: 18px; position: relative; }
+  .value::before {
+    content: ""; position: absolute; top: -2px; left: 0; height: 2px; width: 100%;
+    background: var(--amber); transform: scaleX(.15); transform-origin: left;
+    transition: transform .5s ease;
+  }
+  .value:hover::before { transform: scaleX(1); }
+  .value h3 { font: 700 19px/1.2 var(--display); margin: 8px 0 6px; }
+  .value p { color: var(--steel); margin: 0; font-size: 15px; }
+  .icon {
+    width: 36px; height: 36px; border: 1px solid var(--amber); display: grid; place-items: center;
+    color: var(--amber); font: 700 16px/1 var(--mono);
+  }
+  .value:nth-child(1) .icon { animation: bob 3s ease-in-out infinite; }
+  .value:nth-child(2) .icon { animation: bob 3s .4s ease-in-out infinite; }
+  .value:nth-child(3) .icon { animation: bob 3s .8s ease-in-out infinite; }
+  @keyframes bob { 50% { transform: translateY(-6px); } }
+
+  /* ---------- Contact ---------- */
+  .contact {
+    display: flex; justify-content: space-between; align-items: center; gap: 24px; flex-wrap: wrap;
+    background: var(--panel); border: 1px solid var(--line); padding: 36px;
+    position: relative; overflow: hidden;
+  }
+  .contact::after {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(242,169,59,.08), transparent);
+    transform: translateX(-100%);
+    animation: shine 5s ease-in-out infinite;
+    pointer-events: none;
+  }
+  @keyframes shine { 60%, 100% { transform: translateX(100%); } }
+  .contact h2 { margin: 6px 0 4px; }
+  .contact p { color: var(--steel); margin: 0; }
+
+  footer { padding-block: 32px 40px; display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; border-top: 1px solid var(--line); margin-top: 64px; }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 820px) {
+    .hero { grid-template-columns: 1fr; padding-block: 48px 40px; }
+    .radar { width: min(280px, 100%); }
+    .projects, .values { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 480px) {
+    nav { gap: 14px; }
+    nav a:nth-child(3) { display: none; }
+    .card, .contact { padding: 22px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="logo"><span class="logo-mark" aria-hidden="true"></span> TACTEAM</div>
+    <nav aria-label="Main">
+      <a href="#projects">Projects</a>
+      <a href="#values">Studio</a>
+      <a href="#contact">Contact</a>
+    </nav>
+  </header>
+
+  <div class="hero">
+    <div>
+      <div class="status">ALL SYSTEMS ONLINE <span class="cursor" aria-hidden="true"></span></div>
+      <h1><span>Crafting</span> <span>next‑gen</span> <span>Roblox experiences.</span></h1>
+      <p>TacTeam Studios is an independent Roblox development studio. We build experiences with tight systems, clean presentation and a community that gets a say in what ships.</p>
+      <a class="btn" href="#projects">View projects <span class="arrow" aria-hidden="true">→</span></a>
+    </div>
+    <div class="radar-box" aria-hidden="true">
+      <div class="radar">
+        <div class="sweep"></div>
+        <span class="blip b1"></span>
+        <span class="blip b2"></span>
+        <span class="blip b3"></span>
+      </div>
+      <div class="tag">Scanning · <b>2 projects</b> in range</div>
+    </div>
+  </div>
+</div>
+
+<div class="ticker" aria-hidden="true">
+  <div class="ticker-track">
+    <span><b>//</b> PROJECT ALPHA · IN DEVELOPMENT</span>
+    <span><b>//</b> PROJECT BETA · PRE‑PRODUCTION</span>
+    <span><b>//</b> BUILT IN ROBLOX STUDIO + LUAU</span>
+    <span><b>//</b> LAUNCHING SOON</span>
+    <span><b>//</b> TACTEAM.DEV</span>
+    <span><b>//</b> PROJECT ALPHA · IN DEVELOPMENT</span>
+    <span><b>//</b> PROJECT BETA · PRE‑PRODUCTION</span>
+    <span><b>//</b> BUILT IN ROBLOX STUDIO + LUAU</span>
+    <span><b>//</b> LAUNCHING SOON</span>
+    <span><b>//</b> TACTEAM.DEV</span>
+  </div>
+</div>
+
+<div class="wrap">
+  <section id="projects">
+    <div class="sec-head">
+      <div><div class="tag">Operations</div><h2>Upcoming projects</h2></div>
+      <div class="tag">Status as of <b>Sep 2026</b></div>
+    </div>
+    <div class="projects">
+      <article class="card">
+        <div class="tag">Codename · <b>Alpha</b></div>
+        <h3>Project Alpha</h3>
+        <p>Our flagship experience. Core gameplay systems are in place and the team is now building out content and polish.</p>
+        <div class="meter">
+          <div class="meter-row"><span>DEVELOPMENT</span><span>68%</span></div>
+          <div class="bar"><i style="--w:68%"></i></div>
+        </div>
+      </article>
+      <article class="card">
+        <div class="tag">Codename · <b>Beta</b></div>
+        <h3>Project Beta</h3>
+        <p>A second experience in early planning. Design documents and prototypes are underway ahead of full production.</p>
+        <div class="meter">
+          <div class="meter-row"><span>PRE‑PRODUCTION</span><span>24%</span></div>
+          <div class="bar"><i style="--w:24%"></i></div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section id="values">
+    <div class="sec-head">
+      <div><div class="tag">Doctrine</div><h2>How we work</h2></div>
+    </div>
+    <div class="values">
+      <div class="value">
+        <div class="icon" aria-hidden="true">↑</div>
+        <h3>Innovation first</h3>
+        <p>We try new mechanics before settling on familiar ones.</p>
+      </div>
+      <div class="value">
+        <div class="icon" aria-hidden="true">◆</div>
+        <h3>Quality gaming</h3>
+        <p>Every release is tested, tuned and finished before it goes live.</p>
+      </div>
+      <div class="value">
+        <div class="icon" aria-hidden="true">●</div>
+        <h3>Community focused</h3>
+        <p>Players shape updates through feedback and playtests.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="contact">
+    <div class="contact">
+      <div>
+        <div class="tag">Comms open</div>
+        <h2>Want to work with us?</h2>
+        <p>We're open to collaborations with builders, scripters and artists.</p>
+      </div>
+      <div class="tag">Reach us at <b>tacteam.dev</b></div>
+    </div>
+  </section>
+
+  <footer>
+    <span class="tag">© 2026 TacTeam Studios</span>
+    <span class="tag">Built with HTML + CSS animations</span>
+  </footer>
+</div>
+</body>
+</html>
